@@ -120,7 +120,7 @@ The first time you open the app, it will ask you to give some permissions to the
 
 # Acknowledgments 
 
-FullTeaching has been supported under project LERNIM (RTC-2016-4674-7) confunded by the Ministry of Economy, Finance and Competitiveness of Spain, as well as by the European Union FEDER, whose main goal with this funds is to promote technological development, innovation and high-quality research.
+openvidu-android-app has been supported under project LERNIM (RTC-2016-4674-7) confunded by the Ministry of Economy, Finance and Competitiveness of Spain, as well as by the European Union FEDER, whose main goal with this funds is to promote technological development, innovation and high-quality research.
 
 <p align="center"><img src="https://github.com/OpenVidu/openvidu-android-app/blob/master/GitHubImages/footer-ministerio-economia-400-optimized.png?raw=true"/><img src="https://github.com/OpenVidu/openvidu-android-app/blob/master/GitHubImages/footer-european-union-400-optimized.png?raw=true"/></p>
 
