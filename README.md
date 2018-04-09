@@ -118,7 +118,7 @@ The first time you open the app, it will ask you to give some permissions to the
 -	Camera: This permission is compulsory because it wouldn’t make any sense to make a video conference app without using the camera, would it?
 -	Record Audio: We need this permission to allow you to share your beautiful voice with the crowd on the other side of the conversation.
 
-### Acknowledgments ###
+# Acknowledgments 
 
 FullTeaching has been supported under project LERNIM (RTC-2016-4674-7) confunded by the Ministry of Economy, Finance and Competitiveness of Spain, as well as by the European Union FEDER, whose main goal with this funds is to promote technological development, innovation and high-quality research.
 
