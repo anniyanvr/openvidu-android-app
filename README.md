@@ -67,7 +67,7 @@ The application by default will point to the [demo OpenVidu server], it can be u
 - **[Sonar Qube]**
     is a tool that inspects the code to perform with a static analysis and reports back the code health. 
 
-## Code clarification
+### Code clarification
 
 The code is divided in some packages to make the code easier to mantain.
  - CustomWebSocketListener: This class implements WebSocketListener. As its name suggest, this class responsibility is to listen what comes to the socket we have.
