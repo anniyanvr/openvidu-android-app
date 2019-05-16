@@ -2,6 +2,8 @@
 
 ![Technologies](GitHubImages/technologies.png)
 
+**IMPORTANT: This application was implemented as a proof of concept and it is not maintained. It can be broken and possibly it doesn't work with latest OpenVidu releases.** 
+
 ## What is openvidu-android-app?
 
 openvidu-android-app is a basic generalist video conference android application that makes use of WebRTC technology and OpenVidu.
