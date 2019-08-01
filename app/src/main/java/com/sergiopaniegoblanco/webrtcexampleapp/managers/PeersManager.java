@@ -87,7 +87,11 @@ public class PeersManager {
     }
 
     public void start() {
-        PeerConnectionFactory.initializeAndroidGlobals(activity, true);
+        //PeerConnectionFactory.initializeAndroidGlobals(activity, true);
+        PeerConnectionFactory.InitializationOptions.Builder optionsBuilder = PeerConnectionFactory.InitializationOptions.builder(activity);
+        PeerConnectionFactory.InitializationOptions opt = optionsBuilder.createInitializationOptions();
+
+        PeerConnectionFactory.initialize(opt);
 
         PeerConnectionFactory.Options options = new PeerConnectionFactory.Options();
         peerConnectionFactory = new PeerConnectionFactory(options);
@@ -147,8 +151,10 @@ public class PeersManager {
     }
 
     private void createLocalPeerConnection(MediaConstraints sdpConstraints) {
+        //we already have video and audio tracks. Now create peerconnections
         final List<PeerConnection.IceServer> iceServers = new ArrayList<>();
-        PeerConnection.IceServer iceServer = new PeerConnection.IceServer("stun:stun.l.google.com:19302");
+
+        PeerConnection.IceServer iceServer = PeerConnection.IceServer.builder("stun:stun.l.google.com:19302").createIceServer();
         iceServers.add(iceServer);
 
         localPeer = peerConnectionFactory.createPeerConnection(iceServers, sdpConstraints, new CustomPeerConnectionObserver("localPeerCreation") {
@@ -177,8 +183,14 @@ public class PeersManager {
                 super.onCreateSuccess(sessionDescription);
                 localPeer.setLocalDescription(new CustomSdpObserver("localSetLocalDesc"), sessionDescription);
                 Map<String, String> localOfferParams = new HashMap<>();
-                localOfferParams.put("audioOnly", "false");
+                localOfferParams.put("audioActive", "true");
+                localOfferParams.put("videoActive", "true");
                 localOfferParams.put("doLoopback", "false");
+                localOfferParams.put("frameRate", "30");
+                localOfferParams.put("hasAudio", "true");
+                localOfferParams.put("hasVideo", "true");
+                localOfferParams.put("typeOfVideo", "CAMERA");
+                localOfferParams.put("videoDimensions", "{\"width\":320, \"height\":240}");
                 localOfferParams.put("sdpOffer", sessionDescription.description);
                 if (webSocketAdapter.getId() > 1) {
                     webSocketAdapter.sendJson(webSocket, "publishVideo", localOfferParams);
@@ -191,7 +203,7 @@ public class PeersManager {
 
     public void createRemotePeerConnection(RemoteParticipant remoteParticipant) {
         final List<PeerConnection.IceServer> iceServers = new ArrayList<>();
-        PeerConnection.IceServer iceServer = new PeerConnection.IceServer("stun:stun.l.google.com:19302");
+        PeerConnection.IceServer iceServer = PeerConnection.IceServer.builder("stun:stun.l.google.com:19302").createIceServer();
         iceServers.add(iceServer);
 
         MediaConstraints sdpConstraints = new MediaConstraints();

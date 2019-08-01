@@ -4,8 +4,8 @@ plugins {
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 27
-    buildToolsVersion '27.0.2'
+    compileSdkVersion 28
+    //buildToolsVersion '27.0.3'
     defaultConfig {
         applicationId "com.sergiopaniegoblanco.webrtcexampleapp"
         minSdkVersion 21
@@ -21,19 +21,27 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+
+    // WebRTC requires Java 8 features
+    // https://groups.google.com/forum/?utm_medium=email&utm_source=footer#!msg/discuss-webrtc/V1h2uQMDCkA/RA-uzncVAAAJ
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
 }
 
 dependencies {
-    compile fileTree(include: ['*.jar'], dir: 'libs')
-    androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    androidTestImplementation('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
-    compile 'com.android.support:appcompat-v7:27.0.2'
-    compile 'com.android.support.constraint:constraint-layout:1.0.2'
-    testCompile 'junit:junit:4.12'
-    compile 'org.whispersystems:webrtc-android:M59'
-    compile 'com.jakewharton:butterknife:8.8.1'
-    annotationProcessor 'com.jakewharton:butterknife-compiler:8.8.1'
-    compile 'com.neovisionaries:nv-websocket-client:2.3'
-}
+    implementation 'com.android.support:appcompat-v7:28.0.0'
 
+    implementation 'com.android.support.constraint:constraint-layout:1.0.2'
+    testImplementation 'junit:junit:4.12'
+    implementation 'org.whispersystems:webrtc-android:M64'
+    implementation 'com.jakewharton:butterknife:9.0.0'
+    annotationProcessor 'com.jakewharton:butterknife-compiler:9.0.0'
+    implementation 'com.neovisionaries:nv-websocket-client:2.9'
+    implementation 'com.squareup.okhttp3:okhttp:3.12.1'
+}

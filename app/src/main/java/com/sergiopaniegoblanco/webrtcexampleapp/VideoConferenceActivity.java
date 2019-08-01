@@ -141,7 +141,7 @@ public class VideoConferenceActivity extends AppCompatActivity {
     }
 
     public void gotRemoteStream(MediaStream stream, final RemoteParticipant remoteParticipant) {
-        final VideoTrack videoTrack = stream.videoTracks.getFirst();
+        final VideoTrack videoTrack = stream.videoTracks.get(0);
         runOnUiThread(new Runnable() {
             @Override
             public void run() {

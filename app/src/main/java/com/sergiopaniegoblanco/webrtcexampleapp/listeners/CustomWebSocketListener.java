@@ -40,7 +40,7 @@ import java.util.concurrent.TimeUnit;
  * Created by sergiopaniegoblanco on 02/12/2017.
  */
 
-public final class CustomWebSocketListener implements WebSocketListener {
+public class CustomWebSocketListener implements WebSocketListener {
 
     private static final String TAG = "CustomWebSocketAdapter";
     private static final String JSON_RPCVERSION = "2.0";
@@ -59,8 +59,11 @@ public final class CustomWebSocketListener implements WebSocketListener {
     private String remoteParticipantId;
     private PeersManager peersManager;
     private String socketAddress;
+    private String token;
 
-    public CustomWebSocketListener(VideoConferenceActivity videoConferenceActivity, PeersManager peersManager, String sessionName, String participantName, LinearLayout views_container, String socketAddress) {
+    public CustomWebSocketListener(VideoConferenceActivity videoConferenceActivity, PeersManager peersManager,
+                                   String sessionName, String participantName, LinearLayout views_container, String socketAddress,
+                                   String token) {
         this.videoConferenceActivity = videoConferenceActivity;
         this.peersManager = peersManager;
         this.localPeer = peersManager.getLocalPeer();
@@ -71,6 +74,7 @@ public final class CustomWebSocketListener implements WebSocketListener {
         this.socketAddress = socketAddress;
         this.iceCandidatesParams = new ArrayList<>();
         this.participants = new HashMap<>();
+        this.token = token;
     }
 
     public Map<String, RemoteParticipant> getParticipants() {
@@ -100,11 +104,12 @@ public final class CustomWebSocketListener implements WebSocketListener {
         String regex = "(room)+";
         String baseAddress = socketAddress.split(regex)[0];
         Map<String, String> joinRoomParams = new HashMap<>();
-        joinRoomParams.put("dataChannels", "false");
         joinRoomParams.put(JSONConstants.METADATA, "{\"clientData\": \"" + participantName + "\"}");
+        joinRoomParams.put("recorder", "false");
         joinRoomParams.put("secret", "MY_SECRET");
-        joinRoomParams.put("session", baseAddress + sessionName);
-        joinRoomParams.put("token", "gr50nzaqe6avt65cg5v06");
+        joinRoomParams.put("session", sessionName);
+        joinRoomParams.put("platform", "Chrome 73.0.3683.86 on Windows 10 64-bit");
+        joinRoomParams.put("token", token);
         sendJson(websocket, "joinRoom", joinRoomParams);
 
         if (localOfferParams != null) {
@@ -130,12 +135,12 @@ public final class CustomWebSocketListener implements WebSocketListener {
 
     @Override
     public void onConnectError(WebSocket websocket, WebSocketException cause) throws Exception {
-        Log.i(TAG, "Connect error: " + cause);
+        Log.e(TAG, "Connect error: " + cause);
     }
 
     @Override
     public void onDisconnected(WebSocket websocket, WebSocketFrame serverCloseFrame, WebSocketFrame clientCloseFrame, boolean closedByServer) throws Exception {
-        Log.i(TAG, "Disconnected " + serverCloseFrame.getCloseReason() + " " + clientCloseFrame.getCloseReason() + " " + closedByServer);
+        Log.e(TAG, "Disconnected " + serverCloseFrame.getCloseReason() + " " + clientCloseFrame.getCloseReason() + " " + closedByServer);
     }
 
     @Override
@@ -184,6 +189,11 @@ public final class CustomWebSocketListener implements WebSocketListener {
         }
     }
 
+    @Override
+    public void onTextMessage(WebSocket websocket, byte[] data) throws Exception {
+
+    }
+
     private void handleResult(final WebSocket webSocket, JSONObject json) throws JSONException {
         JSONObject result = new JSONObject(json.getString(JSONConstants.RESULT));
         if (result.has(JSONConstants.SDP_ANSWER)) {
@@ -208,25 +218,24 @@ public final class CustomWebSocketListener implements WebSocketListener {
 
     private void addParticipantsAlreadyInRoom(JSONObject result, final WebSocket webSocket) throws JSONException {
         for (int i = 0; i < result.getJSONArray(JSONConstants.VALUE).length(); i++) {
-            remoteParticipantId = result.getJSONArray(JSONConstants.VALUE).getJSONObject(i).getString(JSONConstants.ID);
-            final RemoteParticipant remoteParticipant = new RemoteParticipant();
-            remoteParticipant.setId(remoteParticipantId);
-            participants.put(remoteParticipantId, remoteParticipant);
-            createVideoView(remoteParticipant);
-            setRemoteParticipantName(new JSONObject(result.getJSONArray(JSONConstants.VALUE).getJSONObject(i).getString(JSONConstants.METADATA)).getString("clientData"), remoteParticipant);
-            peersManager.createRemotePeerConnection(remoteParticipant);
-            remoteParticipant.getPeerConnection().createOffer(new CustomSdpObserver("remoteCreateOffer") {
-                @Override
-                public void onCreateSuccess(SessionDescription sessionDescription) {
-                    super.onCreateSuccess(sessionDescription);
-                    remoteParticipant.getPeerConnection().setLocalDescription(new CustomSdpObserver("remoteSetLocalDesc"), sessionDescription);
-                    Map<String, String> remoteOfferParams = new HashMap<>();
-                    remoteOfferParams.put("sdpOffer", sessionDescription.description);
-                    remoteOfferParams.put("sender", remoteParticipantId + "_webcam");
-                    sendJson(webSocket, "receiveVideoFrom", remoteOfferParams);
-                }
-            }, new MediaConstraints());
-
+                remoteParticipantId = result.getJSONArray(JSONConstants.VALUE).getJSONObject(i).getString(JSONConstants.ID);
+                final RemoteParticipant remoteParticipant = new RemoteParticipant();
+                remoteParticipant.setId(remoteParticipantId);
+                participants.put(remoteParticipantId, remoteParticipant);
+                createVideoView(remoteParticipant);
+                setRemoteParticipantName(new JSONObject(result.getJSONArray(JSONConstants.VALUE).getJSONObject(i).getString(JSONConstants.METADATA)).getString("clientData"), remoteParticipant);
+                peersManager.createRemotePeerConnection(remoteParticipant);
+                remoteParticipant.getPeerConnection().createOffer(new CustomSdpObserver("remoteCreateOffer") {
+                    @Override
+                    public void onCreateSuccess(SessionDescription sessionDescription) {
+                        super.onCreateSuccess(sessionDescription);
+                        remoteParticipant.getPeerConnection().setLocalDescription(new CustomSdpObserver("remoteSetLocalDesc"), sessionDescription);
+                        Map<String, String> remoteOfferParams = new HashMap<>();
+                        remoteOfferParams.put("sdpOffer", sessionDescription.description);
+                        remoteOfferParams.put("sender", remoteParticipantId + "_CAMERA");
+                        sendJson(webSocket, "receiveVideoFrom", remoteOfferParams);
+                    }
+                }, new MediaConstraints());
         }
     }
 
@@ -311,7 +320,6 @@ public final class CustomWebSocketListener implements WebSocketListener {
                 remoteOfferParams.put("sdpOffer", sessionDescription.description);
                 remoteOfferParams.put("sender", getRemoteParticipant().getId() + "_webcam");
                 sendJson(webSocket, "receiveVideoFrom", remoteOfferParams);
-
             }
         }, new MediaConstraints());
     }
@@ -403,17 +411,17 @@ public final class CustomWebSocketListener implements WebSocketListener {
 
     @Override
     public void onSendError(WebSocket websocket, WebSocketException cause, WebSocketFrame frame) throws Exception {
-        Log.i(TAG, "Send Error! " + cause);
+        Log.e(TAG, "Send Error! " + cause);
     }
 
     @Override
     public void onUnexpectedError(WebSocket websocket, WebSocketException cause) throws Exception {
-        Log.i(TAG, "Unexpected error! " + cause);
+        Log.e(TAG, "Unexpected error! " + cause);
     }
 
     @Override
     public void handleCallbackError(WebSocket websocket, Throwable cause) throws Exception {
-        Log.i(TAG, "Handle callback error! " + cause);
+        Log.e(TAG, "Handle callback error! " + cause);
     }
 
     @Override
