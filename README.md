@@ -8,7 +8,7 @@
 **Knonw issues:**
 
 - Update the project dependencies
-- Fix bug when a remote user is desconnected (the video desn't disappear)
+- Fix bug when a remote user is desconnected (the video doesn't disappear)
 - App user is not publishing audio
 
 ## What is openvidu-android-app?
