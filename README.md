@@ -2,7 +2,14 @@
 
 ![Technologies](GitHubImages/technologies.png)
 
-**IMPORTANT: This application was implemented as a proof of concept and it is not maintained. It can be broken and possibly it doesn't work with latest OpenVidu releases.** 
+
+**NOTE: We are working on restore openvidu-android-app. The project has been updated and presumably it's working on latest version of OpenVidu but not with the expected behavior.**
+
+**Knonw issues:**
+
+- Update the project dependencies
+- Fix bug when a remote user is desconnected (the video doesn't disappear)
+- App user is not publishing audio
 
 ## What is openvidu-android-app?
 
