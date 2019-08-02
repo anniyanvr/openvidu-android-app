@@ -87,14 +87,12 @@ public class PeersManager {
     }
 
     public void start() {
-        //PeerConnectionFactory.initializeAndroidGlobals(activity, true);
         PeerConnectionFactory.InitializationOptions.Builder optionsBuilder = PeerConnectionFactory.InitializationOptions.builder(activity);
         PeerConnectionFactory.InitializationOptions opt = optionsBuilder.createInitializationOptions();
 
         PeerConnectionFactory.initialize(opt);
 
-        PeerConnectionFactory.Options options = new PeerConnectionFactory.Options();
-        peerConnectionFactory = new PeerConnectionFactory(options);
+        peerConnectionFactory = PeerConnectionFactory.builder().createPeerConnectionFactory();
 
         videoGrabberAndroid = createVideoGrabber();
         MediaConstraints constraints = new MediaConstraints();
@@ -109,8 +107,7 @@ public class PeersManager {
             videoGrabberAndroid.startCapture(1000, 1000, 30);
         }
 
-        localRenderer = new VideoRenderer(localVideoView);
-        localVideoTrack.addRenderer(localRenderer);
+        localVideoTrack.addSink(localVideoView);
 
         MediaConstraints sdpConstraints = new MediaConstraints();
         sdpConstraints.mandatory.add(new MediaConstraints.KeyValuePair("offerToReceiveAudio", "true"));
@@ -157,7 +154,7 @@ public class PeersManager {
         PeerConnection.IceServer iceServer = PeerConnection.IceServer.builder("stun:stun.l.google.com:19302").createIceServer();
         iceServers.add(iceServer);
 
-        localPeer = peerConnectionFactory.createPeerConnection(iceServers, sdpConstraints, new CustomPeerConnectionObserver("localPeerCreation") {
+        localPeer = peerConnectionFactory.createPeerConnection(iceServers, new CustomPeerConnectionObserver("localPeerCreation") {
             @Override
             public void onIceCandidate(IceCandidate iceCandidate) {
                 super.onIceCandidate(iceCandidate);
@@ -210,7 +207,7 @@ public class PeersManager {
         sdpConstraints.mandatory.add(new MediaConstraints.KeyValuePair("offerToReceiveAudio", "true"));
         sdpConstraints.mandatory.add(new MediaConstraints.KeyValuePair("offerToReceiveVideo", "true"));
 
-        PeerConnection remotePeer = peerConnectionFactory.createPeerConnection(iceServers, sdpConstraints, new CustomPeerConnectionObserver("remotePeerCreation", remoteParticipant) {
+        PeerConnection remotePeer = peerConnectionFactory.createPeerConnection(iceServers, new CustomPeerConnectionObserver("remotePeerCreation", remoteParticipant) {
 
             @Override
             public void onIceCandidate(IceCandidate iceCandidate) {

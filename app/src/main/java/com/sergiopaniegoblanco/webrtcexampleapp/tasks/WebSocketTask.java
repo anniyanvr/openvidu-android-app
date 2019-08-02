@@ -133,7 +133,7 @@ public class WebSocketTask extends AsyncTask<VideoConferenceActivity, Void, Void
             Runnable myRunnable = new Runnable() {
                 @Override
                 public void run() {
-                    Toast toast = Toast.makeText(activity, activity.getResources().getString(R.string.no_connection), Toast.LENGTH_LONG);
+                    Toast toast = Toast.makeText(activity,e.getMessage(),Toast.LENGTH_LONG);
                     toast.show();
                     activity.hangup();
                 }

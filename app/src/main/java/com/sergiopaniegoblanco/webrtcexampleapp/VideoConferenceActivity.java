@@ -145,9 +145,8 @@ public class VideoConferenceActivity extends AppCompatActivity {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                remoteRenderer = new VideoRenderer(remoteParticipant.getVideoView());
                 remoteParticipant.getVideoView().setVisibility(View.VISIBLE);
-                videoTrack.addRenderer(remoteRenderer);
+                videoTrack.addSink(remoteParticipant.getVideoView());
                 MediaStream mediaStream = peersManager.getPeerConnectionFactory().createLocalMediaStream("105");
                 remoteParticipant.setMediaStream(mediaStream);
                 mediaStream.addTrack(peersManager.getLocalAudioTrack());
