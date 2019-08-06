@@ -325,7 +325,7 @@ public class CustomWebSocketListener implements WebSocketListener {
     }
 
     private void participantLeftMethod(JSONObject params) throws JSONException {
-        final String participantId = params.getString("name");
+        final String participantId = params.getString("connectionId");
         participants.get(participantId).getPeerConnection().close();
         Handler mainHandler = new Handler(videoConferenceActivity.getMainLooper());
         Runnable myRunnable = new Runnable() {
