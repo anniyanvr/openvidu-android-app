@@ -9,7 +9,7 @@ android {
     defaultConfig {
         applicationId "com.sergiopaniegoblanco.webrtcexampleapp"
         minSdkVersion 21
-        targetSdkVersion 27
+        targetSdkVersion 28
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
@@ -36,10 +36,9 @@ dependencies {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
     implementation 'com.android.support:appcompat-v7:28.0.0'
-
     implementation 'com.android.support.constraint:constraint-layout:1.1.0'
     testImplementation 'junit:junit:4.12'
-    implementation 'org.whispersystems:webrtc-android:M68'
+    implementation 'org.whispersystems:webrtc-android:M76'
     implementation 'com.jakewharton:butterknife:9.0.0'
     annotationProcessor 'com.jakewharton:butterknife-compiler:9.0.0'
     implementation 'com.neovisionaries:nv-websocket-client:2.9'

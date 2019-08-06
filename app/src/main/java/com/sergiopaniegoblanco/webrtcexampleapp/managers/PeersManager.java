@@ -1,5 +1,6 @@
 package com.sergiopaniegoblanco.webrtcexampleapp.managers;
 
+import android.util.Log;
 import android.widget.LinearLayout;
 
 import com.neovisionaries.ws.client.WebSocket;
@@ -12,16 +13,20 @@ import com.sergiopaniegoblanco.webrtcexampleapp.observers.CustomSdpObserver;
 import org.webrtc.AudioSource;
 import org.webrtc.AudioTrack;
 import org.webrtc.Camera1Enumerator;
-import org.webrtc.CameraEnumerator;
+import org.webrtc.EglBase;
 import org.webrtc.IceCandidate;
 import org.webrtc.MediaConstraints;
 import org.webrtc.MediaStream;
 import org.webrtc.PeerConnection;
 import org.webrtc.PeerConnectionFactory;
 import org.webrtc.SessionDescription;
+import org.webrtc.SoftwareVideoDecoderFactory;
+import org.webrtc.SoftwareVideoEncoderFactory;
+import org.webrtc.SurfaceTextureHelper;
 import org.webrtc.SurfaceViewRenderer;
 import org.webrtc.VideoCapturer;
-import org.webrtc.VideoRenderer;
+import org.webrtc.VideoDecoderFactory;
+import org.webrtc.VideoEncoderFactory;
 import org.webrtc.VideoSource;
 import org.webrtc.VideoTrack;
 
@@ -36,6 +41,8 @@ import java.util.Map;
 
 public class PeersManager {
 
+    private final String TAG = "PeersManager";
+    private final EglBase rootEglBase = EglBase.create();
     private PeerConnection localPeer;
     private PeerConnectionFactory peerConnectionFactory;
     private CustomWebSocketListener webSocketAdapter;
@@ -43,10 +50,11 @@ public class PeersManager {
     private LinearLayout views_container;
     private AudioTrack localAudioTrack;
     private VideoTrack localVideoTrack;
-    private VideoRenderer localRenderer;
     private SurfaceViewRenderer localVideoView;
-    private VideoCapturer videoGrabberAndroid;
+    private VideoCapturer videoCapturerAndroid;
     private VideoConferenceActivity activity;
+    private SurfaceTextureHelper surfaceTextureHelper;
+
 
     public PeersManager(VideoConferenceActivity activity, LinearLayout views_container, SurfaceViewRenderer localVideoView) {
         this.views_container = views_container;
@@ -87,56 +95,74 @@ public class PeersManager {
     }
 
     public void start() {
+
+        final VideoEncoderFactory encoderFactory;
+        final VideoDecoderFactory decoderFactory;
+
         PeerConnectionFactory.InitializationOptions.Builder optionsBuilder = PeerConnectionFactory.InitializationOptions.builder(activity);
+        optionsBuilder.setEnableInternalTracer(true);
         PeerConnectionFactory.InitializationOptions opt = optionsBuilder.createInitializationOptions();
 
         PeerConnectionFactory.initialize(opt);
 
-        peerConnectionFactory = PeerConnectionFactory.builder().createPeerConnectionFactory();
+        PeerConnectionFactory.Options options = new PeerConnectionFactory.Options();
 
-        videoGrabberAndroid = createVideoGrabber();
+
+        /*encoderFactory = new DefaultVideoEncoderFactory(
+                rootEglBase.getEglBaseContext(), true ,true);
+        decoderFactory = new DefaultVideoDecoderFactory(rootEglBase.getEglBaseContext());*/
+
+
+        encoderFactory = new SoftwareVideoEncoderFactory();
+        decoderFactory = new SoftwareVideoDecoderFactory();
+
+        peerConnectionFactory = PeerConnectionFactory.builder()
+                .setVideoEncoderFactory(encoderFactory)
+                .setVideoDecoderFactory(decoderFactory)
+                .setOptions(options)
+                .createPeerConnectionFactory();
+
+        createVideoCapturer();
+
         MediaConstraints constraints = new MediaConstraints();
-
-        VideoSource videoSource = peerConnectionFactory.createVideoSource(videoGrabberAndroid);
-        localVideoTrack = peerConnectionFactory.createVideoTrack("100", videoSource);
 
         AudioSource audioSource = peerConnectionFactory.createAudioSource(constraints);
         localAudioTrack = peerConnectionFactory.createAudioTrack("101", audioSource);
 
-        if (videoGrabberAndroid != null) {
-            videoGrabberAndroid.startCapture(1000, 1000, 30);
-        }
-
         localVideoTrack.addSink(localVideoView);
 
-        MediaConstraints sdpConstraints = new MediaConstraints();
-        sdpConstraints.mandatory.add(new MediaConstraints.KeyValuePair("offerToReceiveAudio", "true"));
-        sdpConstraints.mandatory.add(new MediaConstraints.KeyValuePair("offerToReceiveVideo", "true"));
-
-        createLocalPeerConnection(sdpConstraints);
+        createLocalPeerConnection();
     }
 
-    private VideoCapturer createVideoGrabber() {
-        VideoCapturer videoCapturer;
-        videoCapturer = createCameraGrabber(new Camera1Enumerator(false));
-        return videoCapturer;
+    private void createVideoCapturer() {
+        videoCapturerAndroid = createCameraCapturer(new Camera1Enumerator(false));
+        surfaceTextureHelper =
+                SurfaceTextureHelper.create("CaptureThread", rootEglBase.getEglBaseContext());
+        VideoSource videoSource = peerConnectionFactory.createVideoSource(videoCapturerAndroid.isScreencast());
+        videoCapturerAndroid.initialize(surfaceTextureHelper, activity.getApplicationContext(), videoSource.getCapturerObserver());
+        videoCapturerAndroid.startCapture(1000, 1000, 30);
+        localVideoTrack = peerConnectionFactory.createVideoTrack("100", videoSource);
+        localVideoTrack.setEnabled(true);
     }
 
-    private VideoCapturer createCameraGrabber(CameraEnumerator enumerator) {
+    private VideoCapturer createCameraCapturer(Camera1Enumerator enumerator) {
         final String[] deviceNames = enumerator.getDeviceNames();
 
+        // Trying to find front facing camera
         for (String deviceName : deviceNames) {
             if (enumerator.isFrontFacing(deviceName)) {
+                Log.d(TAG, "Creating front facing camera capturer.");
                 VideoCapturer videoCapturer = enumerator.createCapturer(deviceName, null);
-
                 if (videoCapturer != null) {
                     return videoCapturer;
                 }
             }
         }
 
+        // Front facing camera not found, try something else
         for (String deviceName : deviceNames) {
             if (!enumerator.isFrontFacing(deviceName)) {
+                Log.d(TAG, "Creating other camera capturer.");
                 VideoCapturer videoCapturer = enumerator.createCapturer(deviceName, null);
                 if (videoCapturer != null) {
                     return videoCapturer;
@@ -147,7 +173,7 @@ public class PeersManager {
         return null;
     }
 
-    private void createLocalPeerConnection(MediaConstraints sdpConstraints) {
+    private void createLocalPeerConnection() {
         //we already have video and audio tracks. Now create peerconnections
         final List<PeerConnection.IceServer> iceServers = new ArrayList<>();
 
@@ -203,10 +229,6 @@ public class PeersManager {
         PeerConnection.IceServer iceServer = PeerConnection.IceServer.builder("stun:stun.l.google.com:19302").createIceServer();
         iceServers.add(iceServer);
 
-        MediaConstraints sdpConstraints = new MediaConstraints();
-        sdpConstraints.mandatory.add(new MediaConstraints.KeyValuePair("offerToReceiveAudio", "true"));
-        sdpConstraints.mandatory.add(new MediaConstraints.KeyValuePair("offerToReceiveVideo", "true"));
-
         PeerConnection remotePeer = peerConnectionFactory.createPeerConnection(iceServers, new CustomPeerConnectionObserver("remotePeerCreation", remoteParticipant) {
 
             @Override
@@ -238,7 +260,7 @@ public class PeersManager {
         if (webSocketAdapter != null && localPeer != null) {
             webSocketAdapter.sendJson(webSocket, "leaveRoom", new HashMap<String, String>());
             webSocket.disconnect();
-            localPeer.close();
+            localPeer.dispose();
             Map<String, RemoteParticipant> participants = webSocketAdapter.getParticipants();
             for (RemoteParticipant remoteParticipant : participants.values()) {
                 remoteParticipant.getPeerConnection().close();
@@ -247,9 +269,21 @@ public class PeersManager {
             }
         }
         if (localVideoTrack != null) {
-            localVideoTrack.removeRenderer(localRenderer);
+            localVideoTrack.removeSink(localVideoView);
             localVideoView.clearImage();
-            videoGrabberAndroid.dispose();
+            videoCapturerAndroid.dispose();
         }
+
+        if (surfaceTextureHelper != null) {
+            surfaceTextureHelper.dispose();
+            surfaceTextureHelper = null;
+        }
+        if (peerConnectionFactory != null) {
+            peerConnectionFactory.dispose();
+            peerConnectionFactory = null;
+        }
+        PeerConnectionFactory.stopInternalTracingCapture();
+        PeerConnectionFactory.shutdownInternalTracer();
+
     }
 }

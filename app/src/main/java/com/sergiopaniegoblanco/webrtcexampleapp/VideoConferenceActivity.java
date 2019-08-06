@@ -23,7 +23,6 @@ import com.sergiopaniegoblanco.webrtcexampleapp.tasks.WebSocketTask;
 import org.webrtc.EglBase;
 import org.webrtc.MediaStream;
 import org.webrtc.SurfaceViewRenderer;
-import org.webrtc.VideoRenderer;
 import org.webrtc.VideoTrack;
 
 import java.util.Random;
@@ -37,7 +36,6 @@ public class VideoConferenceActivity extends AppCompatActivity {
     private static final int MY_PERMISSIONS_REQUEST_RECORD_AUDIO = 101;
     private static final int MY_PERMISSIONS_REQUEST = 102;
 
-    private VideoRenderer remoteRenderer;
     private PeersManager peersManager;
     private WebSocketTask webSocketTask;
 
@@ -99,8 +97,9 @@ public class VideoConferenceActivity extends AppCompatActivity {
     }
 
     public void initViews() {
-        localVideoView.setMirror(true);
         EglBase rootEglBase = EglBase.create();
+        localVideoView.setMirror(true);
+        localVideoView.setEnableHardwareScaler(true);
         localVideoView.init(rootEglBase.getEglBaseContext(), null);
         localVideoView.setZOrderMediaOverlay(true);
     }
