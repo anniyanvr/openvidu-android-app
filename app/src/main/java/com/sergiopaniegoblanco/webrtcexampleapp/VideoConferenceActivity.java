@@ -68,7 +68,6 @@ public class VideoConferenceActivity extends AppCompatActivity {
         int randomIndex = random.nextInt(100);
         participant_name.setText(participant_name.getText().append(String.valueOf(randomIndex)));
         this.peersManager = new PeersManager(this, views_container, localVideoView);
-        initViews();
     }
 
     public LinearLayout getViewsContainer() {
@@ -98,10 +97,11 @@ public class VideoConferenceActivity extends AppCompatActivity {
 
     public void initViews() {
         EglBase rootEglBase = EglBase.create();
+        localVideoView.init(rootEglBase.getEglBaseContext(), null);
         localVideoView.setMirror(true);
         localVideoView.setEnableHardwareScaler(true);
-        localVideoView.init(rootEglBase.getEglBaseContext(), null);
         localVideoView.setZOrderMediaOverlay(true);
+
     }
 
     public void start(View view) {
@@ -110,6 +110,7 @@ public class VideoConferenceActivity extends AppCompatActivity {
                 hangup();
                 return;
             }
+            initViews();
             start_finish_call.setText(getResources().getString(R.string.hang_up));
             socket_address.setEnabled(false);
             socket_address.setFocusable(false);
@@ -164,6 +165,7 @@ public class VideoConferenceActivity extends AppCompatActivity {
     public void hangup() {
         webSocketTask.setCancelled(true);
         peersManager.hangup();
+        localVideoView.clearImage();
         localVideoView.release();
         start_finish_call.setText(getResources().getString(R.string.start_button));
         socket_address.setEnabled(true);
