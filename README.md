@@ -9,6 +9,7 @@
 
 - Update the project dependencies
 - Fix bug when a remote user is desconnected (the video doesn't disappear)
+- App user can't see his camera when rejoin to the session
 - ~~App user is not publishing audio~~
 
 ## What is openvidu-android-app?
