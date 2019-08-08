@@ -18,7 +18,7 @@ import android.widget.TextView;
 
 import com.sergiopaniegoblanco.webrtcexampleapp.fragments.PermissionsDialogFragment;
 import com.sergiopaniegoblanco.webrtcexampleapp.managers.PeersManager;
-import com.sergiopaniegoblanco.webrtcexampleapp.tasks.WebSocketTask;
+import com.sergiopaniegoblanco.webrtcexampleapp.openvidu.WebSocketTask;
 
 import org.webrtc.EglBase;
 import org.webrtc.MediaStream;

@@ -1,4 +1,4 @@
-package com.sergiopaniegoblanco.webrtcexampleapp.listeners;
+package com.sergiopaniegoblanco.webrtcexampleapp.openvidu;
 
 import android.os.Handler;
 import android.util.Log;
@@ -13,11 +13,11 @@ import com.neovisionaries.ws.client.WebSocketException;
 import com.neovisionaries.ws.client.WebSocketFrame;
 import com.neovisionaries.ws.client.WebSocketListener;
 import com.neovisionaries.ws.client.WebSocketState;
+import com.sergiopaniegoblanco.webrtcexampleapp.R;
+import com.sergiopaniegoblanco.webrtcexampleapp.RemoteParticipant;
 import com.sergiopaniegoblanco.webrtcexampleapp.VideoConferenceActivity;
 import com.sergiopaniegoblanco.webrtcexampleapp.constants.JSONConstants;
 import com.sergiopaniegoblanco.webrtcexampleapp.managers.PeersManager;
-import com.sergiopaniegoblanco.webrtcexampleapp.R;
-import com.sergiopaniegoblanco.webrtcexampleapp.RemoteParticipant;
 import com.sergiopaniegoblanco.webrtcexampleapp.observers.CustomSdpObserver;
 
 import org.json.JSONException;
@@ -40,7 +40,7 @@ import java.util.concurrent.TimeUnit;
  * Created by sergiopaniegoblanco on 02/12/2017.
  */
 
-public class CustomWebSocketListener implements WebSocketListener {
+public class CustomWebSocket implements WebSocketListener {
 
     private static final String TAG = "CustomWebSocketAdapter";
     private static final String JSON_RPCVERSION = "2.0";
@@ -61,9 +61,9 @@ public class CustomWebSocketListener implements WebSocketListener {
     private String socketAddress;
     private String token;
 
-    public CustomWebSocketListener(VideoConferenceActivity videoConferenceActivity, PeersManager peersManager,
-                                   String sessionName, String participantName, LinearLayout views_container, String socketAddress,
-                                   String token) {
+    public CustomWebSocket(VideoConferenceActivity videoConferenceActivity, PeersManager peersManager,
+                           String sessionName, String participantName, LinearLayout views_container, String socketAddress
+                                   /*String token*/) {
         this.videoConferenceActivity = videoConferenceActivity;
         this.peersManager = peersManager;
         this.localPeer = peersManager.getLocalPeer();
@@ -74,7 +74,7 @@ public class CustomWebSocketListener implements WebSocketListener {
         this.socketAddress = socketAddress;
         this.iceCandidatesParams = new ArrayList<>();
         this.participants = new HashMap<>();
-        this.token = token;
+        this.token = "";
     }
 
     public Map<String, RemoteParticipant> getParticipants() {
@@ -110,10 +110,10 @@ public class CustomWebSocketListener implements WebSocketListener {
         joinRoomParams.put("session", sessionName);
         joinRoomParams.put("platform", "Android " + android.os.Build.VERSION.SDK_INT);
         joinRoomParams.put("token", token);
-        sendJson(websocket, "joinRoom", joinRoomParams);
+        sendJson(websocket, JSONConstants.JOIN_ROOM_METHOD, joinRoomParams);
 
         if (localOfferParams != null) {
-            sendJson(websocket, "publishVideo", localOfferParams);
+            sendJson(websocket, JSONConstants.PUBLISH_VIDEO_METHOD, localOfferParams);
         }
     }
 
@@ -128,7 +128,7 @@ public class CustomWebSocketListener implements WebSocketListener {
                 if (id == 0) {
                     pingParams.put("interval", "3000");
                 }
-                sendJson(webSocket, "ping", pingParams);
+                sendJson(webSocket, JSONConstants.PING_METHOD, pingParams);
             }
         }, initialDelay, PING_MESSAGE_INTERVAL, TimeUnit.SECONDS);
     }
@@ -206,7 +206,7 @@ public class CustomWebSocketListener implements WebSocketListener {
                 this.userId = result.getString(JSONConstants.ID);
                 for (Map<String, String> iceCandidate : iceCandidatesParams) {
                     iceCandidate.put("endpointName", this.userId);
-                    sendJson(webSocket, "onIceCandidate", iceCandidate);
+                    sendJson(webSocket, JSONConstants.ON_ICE_CANDIDATE_METHOD, iceCandidate);
                 }
             }
         } else if (result.has(JSONConstants.VALUE)) {
@@ -233,7 +233,7 @@ public class CustomWebSocketListener implements WebSocketListener {
                         Map<String, String> remoteOfferParams = new HashMap<>();
                         remoteOfferParams.put("sdpOffer", sessionDescription.description);
                         remoteOfferParams.put("sender", remoteParticipantId + "_CAMERA");
-                        sendJson(webSocket, "receiveVideoFrom", remoteOfferParams);
+                        sendJson(webSocket, JSONConstants.RECEIVE_VIDEO_METHOD, remoteOfferParams);
                     }
                 }, new MediaConstraints());
         }
@@ -241,7 +241,7 @@ public class CustomWebSocketListener implements WebSocketListener {
 
     private void handleMethod(final WebSocket webSocket, JSONObject json) throws JSONException {
         if(!json.has(JSONConstants.PARAMS)) {
-            Log.e(TAG, "No params");
+            Log.e(TAG, "No params " + json.toString());
         } else {
             final JSONObject params = new JSONObject(json.getString(JSONConstants.PARAMS));
             String method = json.getString(JSONConstants.METHOD);
@@ -259,7 +259,7 @@ public class CustomWebSocketListener implements WebSocketListener {
                     participantLeftMethod(params);
                     break;
                 default:
-                    throw new JSONException("Can't understand method: " + method);
+                    throw new JSONException("Unknown method: " + method);
             }
         }
     }
@@ -319,7 +319,7 @@ public class CustomWebSocketListener implements WebSocketListener {
                 Map<String, String> remoteOfferParams = new HashMap<>();
                 remoteOfferParams.put("sdpOffer", sessionDescription.description);
                 remoteOfferParams.put("sender", getRemoteParticipant().getId() + "_webcam");
-                sendJson(webSocket, "receiveVideoFrom", remoteOfferParams);
+                sendJson(webSocket, JSONConstants.RECEIVE_VIDEO_METHOD, remoteOfferParams);
             }
         }, new MediaConstraints());
     }
@@ -454,7 +454,7 @@ public class CustomWebSocketListener implements WebSocketListener {
                 paramsJson.put(param.getKey(), param.getValue());
             }
             JSONObject jsonObject = new JSONObject();
-            if (method.equals(JSONConstants.JOIN_ROOM)) {
+            if (method.equals(JSONConstants.JOIN_ROOM_METHOD)) {
                 jsonObject.put(JSONConstants.ID, 1)
                         .put(JSONConstants.PARAMS, paramsJson);
             } else if (paramsJson.length() > 0) {
@@ -479,5 +479,40 @@ public class CustomWebSocketListener implements WebSocketListener {
 
     public void setLocalOfferParams(Map<String, String> offerParams) {
         this.localOfferParams = offerParams;
+    }
+
+    public Map<String, String> setLocalIceCandidateParams(IceCandidate iceCandidate) {
+        Map<String, String> iceCandidateParams = new HashMap<>();
+        iceCandidateParams.put("sdpMid", iceCandidate.sdpMid);
+        iceCandidateParams.put("sdpMLineIndex", Integer.toString(iceCandidate.sdpMLineIndex));
+        iceCandidateParams.put("candidate", iceCandidate.sdp);
+        if (this.getUserId() != null) {
+            iceCandidateParams.put("endpointName", this.getUserId());
+        }
+        return iceCandidateParams;
+    }
+
+    public Map<String, String> setRemoteIceCandidateParams(IceCandidate iceCandidate) {
+        Map<String, String> iceCandidateParams = new HashMap<>();
+        iceCandidateParams.put("sdpMid", iceCandidate.sdpMid);
+        iceCandidateParams.put("sdpMLineIndex", Integer.toString(iceCandidate.sdpMLineIndex));
+        iceCandidateParams.put("candidate", iceCandidate.sdp);
+        iceCandidateParams.put("endpointName", remoteParticipantId);
+        return iceCandidateParams;
+    }
+
+    public Map<String, String> setLocalOfferParams(SessionDescription sessionDescription) {
+        Map<String, String> localOfferParams = new HashMap<>();
+        localOfferParams.put("audioActive", "true");
+        localOfferParams.put("videoActive", "true");
+        localOfferParams.put("doLoopback", "false");
+        localOfferParams.put("frameRate", "30");
+        localOfferParams.put("hasAudio", "true");
+        localOfferParams.put("hasVideo", "true");
+        localOfferParams.put("typeOfVideo", "CAMERA");
+        localOfferParams.put("videoDimensions", "{\"width\":320, \"height\":240}");
+        localOfferParams.put("sdpOffer", sessionDescription.description);
+
+        return localOfferParams;
     }
 }

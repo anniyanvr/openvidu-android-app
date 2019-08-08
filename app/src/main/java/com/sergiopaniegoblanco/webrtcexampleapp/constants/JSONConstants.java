@@ -17,8 +17,15 @@ public final class JSONConstants {
     public static final String PARTICIPANT_LEFT = "participantLeft";
     public static final String SESSION_ID = "sessionId";
     public static final String SDP_ANSWER = "sdpAnswer";
-    public static final String JOIN_ROOM = "joinRoom";
     public static final String METADATA = "metadata";
+
+    // Methods
+    public static final String JOIN_ROOM_METHOD = "joinRoom";
+    public static final String PUBLISH_VIDEO_METHOD = "publishVideo";
+    public static final String PING_METHOD = "ping";
+    public static final String ON_ICE_CANDIDATE_METHOD = "onIceCandidate";
+    public static final String RECEIVE_VIDEO_METHOD = "receiveVideoFrom";
+    public static final String LEAVE_ROOM_METHOD = "leaveRoom";
 
     private JSONConstants() {}
 }

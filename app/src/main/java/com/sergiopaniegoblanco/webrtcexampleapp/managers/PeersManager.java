@@ -6,9 +6,10 @@ import android.widget.LinearLayout;
 import com.neovisionaries.ws.client.WebSocket;
 import com.sergiopaniegoblanco.webrtcexampleapp.VideoConferenceActivity;
 import com.sergiopaniegoblanco.webrtcexampleapp.RemoteParticipant;
-import com.sergiopaniegoblanco.webrtcexampleapp.listeners.CustomWebSocketListener;
+import com.sergiopaniegoblanco.webrtcexampleapp.constants.JSONConstants;
 import com.sergiopaniegoblanco.webrtcexampleapp.observers.CustomPeerConnectionObserver;
 import com.sergiopaniegoblanco.webrtcexampleapp.observers.CustomSdpObserver;
+import com.sergiopaniegoblanco.webrtcexampleapp.openvidu.CustomWebSocket;
 
 import org.webrtc.AudioSource;
 import org.webrtc.AudioTrack;
@@ -45,7 +46,7 @@ public class PeersManager {
     private final EglBase rootEglBase = EglBase.create();
     private PeerConnection localPeer;
     private PeerConnectionFactory peerConnectionFactory;
-    private CustomWebSocketListener webSocketAdapter;
+    private CustomWebSocket webSocketAdapter;
     private WebSocket webSocket;
     private LinearLayout views_container;
     private AudioTrack localAudioTrack;
@@ -82,11 +83,11 @@ public class PeersManager {
         this.webSocket = webSocket;
     }
 
-    public CustomWebSocketListener getWebSocketAdapter() {
+    public CustomWebSocket getWebSocketAdapter() {
         return webSocketAdapter;
     }
 
-    public void setWebSocketAdapter(CustomWebSocketListener webSocketAdapter) {
+    public void setWebSocketAdapter(CustomWebSocket webSocketAdapter) {
         this.webSocketAdapter = webSocketAdapter;
     }
 
@@ -184,13 +185,9 @@ public class PeersManager {
             @Override
             public void onIceCandidate(IceCandidate iceCandidate) {
                 super.onIceCandidate(iceCandidate);
-                Map<String, String> iceCandidateParams = new HashMap<>();
-                iceCandidateParams.put("sdpMid", iceCandidate.sdpMid);
-                iceCandidateParams.put("sdpMLineIndex", Integer.toString(iceCandidate.sdpMLineIndex));
-                iceCandidateParams.put("candidate", iceCandidate.sdp);
+                Map<String, String> iceCandidateParams = webSocketAdapter.setLocalIceCandidateParams(iceCandidate);
                 if (webSocketAdapter.getUserId() != null) {
-                    iceCandidateParams.put("endpointName", webSocketAdapter.getUserId());
-                    webSocketAdapter.sendJson(webSocket, "onIceCandidate", iceCandidateParams);
+                    webSocketAdapter.sendJson(webSocket, JSONConstants.ON_ICE_CANDIDATE_METHOD, iceCandidateParams);
                 } else {
                     webSocketAdapter.addIceCandidate(iceCandidateParams);
                 }
@@ -205,18 +202,10 @@ public class PeersManager {
             public void onCreateSuccess(SessionDescription sessionDescription) {
                 super.onCreateSuccess(sessionDescription);
                 localPeer.setLocalDescription(new CustomSdpObserver("localSetLocalDesc"), sessionDescription);
-                Map<String, String> localOfferParams = new HashMap<>();
-                localOfferParams.put("audioActive", "true");
-                localOfferParams.put("videoActive", "true");
-                localOfferParams.put("doLoopback", "false");
-                localOfferParams.put("frameRate", "30");
-                localOfferParams.put("hasAudio", "true");
-                localOfferParams.put("hasVideo", "true");
-                localOfferParams.put("typeOfVideo", "CAMERA");
-                localOfferParams.put("videoDimensions", "{\"width\":320, \"height\":240}");
-                localOfferParams.put("sdpOffer", sessionDescription.description);
+                Map<String, String> localOfferParams =webSocketAdapter.setLocalOfferParams(sessionDescription);
+
                 if (webSocketAdapter.getId() > 1) {
-                    webSocketAdapter.sendJson(webSocket, "publishVideo", localOfferParams);
+                    webSocketAdapter.sendJson(webSocket, JSONConstants.PUBLISH_VIDEO_METHOD, localOfferParams);
                 } else {
                     webSocketAdapter.setLocalOfferParams(localOfferParams);
                 }
@@ -234,12 +223,8 @@ public class PeersManager {
             @Override
             public void onIceCandidate(IceCandidate iceCandidate) {
                 super.onIceCandidate(iceCandidate);
-                Map<String, String> iceCandidateParams = new HashMap<>();
-                iceCandidateParams.put("sdpMid", iceCandidate.sdpMid);
-                iceCandidateParams.put("sdpMLineIndex", Integer.toString(iceCandidate.sdpMLineIndex));
-                iceCandidateParams.put("candidate", iceCandidate.sdp);
-                iceCandidateParams.put("endpointName", getRemoteParticipant().getId());
-                webSocketAdapter.sendJson(webSocket, "onIceCandidate", iceCandidateParams);
+                Map<String, String> iceCandidateParams = webSocketAdapter.setRemoteIceCandidateParams(iceCandidate);
+                webSocketAdapter.sendJson(webSocket, JSONConstants.ON_ICE_CANDIDATE_METHOD, iceCandidateParams);
             }
 
             @Override
@@ -258,20 +243,19 @@ public class PeersManager {
 
     public void hangup() {
         if (webSocketAdapter != null && localPeer != null) {
-            webSocketAdapter.sendJson(webSocket, "leaveRoom", new HashMap<String, String>());
+            webSocketAdapter.sendJson(webSocket, JSONConstants.LEAVE_ROOM_METHOD, new HashMap<String, String>());
             webSocket.disconnect();
             localPeer.dispose();
             Map<String, RemoteParticipant> participants = webSocketAdapter.getParticipants();
             for (RemoteParticipant remoteParticipant : participants.values()) {
                 remoteParticipant.getPeerConnection().close();
                 views_container.removeView(remoteParticipant.getView());
-
             }
         }
         if (localVideoTrack != null) {
             localVideoTrack.removeSink(localVideoView);
-            localVideoView.clearImage();
             videoCapturerAndroid.dispose();
+            videoCapturerAndroid = null;
         }
 
         if (surfaceTextureHelper != null) {
@@ -282,8 +266,6 @@ public class PeersManager {
             peerConnectionFactory.dispose();
             peerConnectionFactory = null;
         }
-        PeerConnectionFactory.stopInternalTracingCapture();
-        PeerConnectionFactory.shutdownInternalTracer();
 
     }
 }

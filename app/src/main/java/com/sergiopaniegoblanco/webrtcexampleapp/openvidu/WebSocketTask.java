@@ -1,4 +1,4 @@
-package com.sergiopaniegoblanco.webrtcexampleapp.tasks;
+package com.sergiopaniegoblanco.webrtcexampleapp.openvidu;
 
 import android.os.AsyncTask;
 import android.os.Handler;
@@ -9,11 +9,8 @@ import com.neovisionaries.ws.client.WebSocketException;
 import com.neovisionaries.ws.client.WebSocketFactory;
 import com.sergiopaniegoblanco.webrtcexampleapp.VideoConferenceActivity;
 import com.sergiopaniegoblanco.webrtcexampleapp.managers.PeersManager;
-import com.sergiopaniegoblanco.webrtcexampleapp.listeners.CustomWebSocketListener;
-import com.sergiopaniegoblanco.webrtcexampleapp.R;
 
-import org.json.JSONException;
-import org.json.JSONObject;
+
 import org.webrtc.AudioTrack;
 import org.webrtc.MediaConstraints;
 import org.webrtc.MediaStream;
@@ -32,11 +29,11 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
-import okhttp3.MediaType;
+//import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
+//import okhttp3.Request;
+//import okhttp3.RequestBody;
+//import okhttp3.Response;
 
 /**
  * Created by sergiopaniegoblanco on 18/02/2018.
@@ -45,8 +42,8 @@ import okhttp3.Response;
 public class WebSocketTask extends AsyncTask<VideoConferenceActivity, Void, Void> {
 
     private static final String TAG = "WebSocketTask";
-    private static final String TOKEN_URL = "https://demos.openvidu.io:4443/api/tokens";
-    private static final String AUTH_TOKEN = "Basic T1BFTlZJRFVBUFA6TVlfU0VDUkVU";
+    //private static final String TOKEN_URL = "https://demos.openvidu.io:4443/api/tokens";
+    //private static final String AUTH_TOKEN = "Basic T1BFTlZJRFVBUFA6TVlfU0VDUkVU";
     private VideoConferenceActivity activity;
     private PeerConnection localPeer;
     private String sessionName;
@@ -95,7 +92,7 @@ public class WebSocketTask extends AsyncTask<VideoConferenceActivity, Void, Void
     @Override
     protected Void doInBackground(VideoConferenceActivity... parameters) {
         try {
-            String json = "{\"session\": \"SessionA\"}";
+            /*String json = "{\"session\": \"SessionA\"}";
             RequestBody body = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), json);
             Request request = new Request.Builder()
                     .url(TOKEN_URL)
@@ -113,7 +110,7 @@ public class WebSocketTask extends AsyncTask<VideoConferenceActivity, Void, Void
                 token = (String) jsonObject.get("token");
             } catch (JSONException e) {
                 e.printStackTrace();
-            }
+            }*/
             WebSocketFactory factory = new WebSocketFactory();
             SSLContext sslContext = SSLContext.getInstance("TLS");
             sslContext.init(null, trustManagers, new java.security.SecureRandom());
@@ -122,13 +119,13 @@ public class WebSocketTask extends AsyncTask<VideoConferenceActivity, Void, Void
 
             socketAddress = getSocketAddress();
             peersManager.setWebSocket(factory.createSocket(socketAddress));
-            peersManager.setWebSocketAdapter(new CustomWebSocketListener(parameters[0], peersManager, sessionName, participantName, activity.getViewsContainer(), socketAddress, token));
+            peersManager.setWebSocketAdapter(new CustomWebSocket(parameters[0], peersManager, sessionName, participantName, activity.getViewsContainer(), socketAddress /*token*/));
             peersManager.getWebSocket().addListener(peersManager.getWebSocketAdapter());
             if (!isCancelled) {
                 peersManager.getWebSocket().connect();
             }
         } catch (IOException | KeyManagementException | WebSocketException | NoSuchAlgorithmException | IllegalArgumentException e) {
-            Log.e("ERROR", e.getMessage().toString());
+            Log.e("ERROR", e.getMessage());
             Handler mainHandler = new Handler(activity.getMainLooper());
             Runnable myRunnable = new Runnable() {
                 @Override
