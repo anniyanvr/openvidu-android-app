@@ -241,7 +241,7 @@ public class PeersManager {
     }
 
 
-    public void hangup() {
+    public void leaveSession() {
         if (webSocketAdapter != null && localPeer != null) {
             webSocketAdapter.sendJson(webSocket, JSONConstants.LEAVE_ROOM_METHOD, new HashMap<String, String>());
             webSocket.disconnect();

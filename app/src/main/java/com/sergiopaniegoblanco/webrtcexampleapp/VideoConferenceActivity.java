@@ -107,7 +107,7 @@ public class VideoConferenceActivity extends AppCompatActivity {
     public void start(View view) {
         if (arePermissionGranted()) {
             if (start_finish_call.getText().equals(getResources().getString(R.string.hang_up))) {
-                hangup();
+                leaveSession();
                 return;
             }
             initViews();
@@ -162,9 +162,9 @@ public class VideoConferenceActivity extends AppCompatActivity {
         remoteParticipant.getParticipantNameText().setPadding(20, 3, 20, 3);
     }
 
-    public void hangup() {
+    public void leaveSession() {
         webSocketTask.setCancelled(true);
-        peersManager.hangup();
+        peersManager.leaveSession();
         localVideoView.clearImage();
         localVideoView.release();
         start_finish_call.setText(getResources().getString(R.string.start_button));
@@ -180,19 +180,19 @@ public class VideoConferenceActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        hangup();
+        leaveSession();
         super.onDestroy();
     }
 
     @Override
     public void onBackPressed() {
-        hangup();
+        leaveSession();
         super.onBackPressed();
     }
 
     @Override
     protected void onStop() {
-        hangup();
+        leaveSession();
         super.onStop();
     }
 }
