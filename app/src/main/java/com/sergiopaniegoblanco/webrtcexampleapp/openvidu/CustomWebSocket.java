@@ -62,8 +62,8 @@ public class CustomWebSocket implements WebSocketListener {
     private String token;
 
     public CustomWebSocket(VideoConferenceActivity videoConferenceActivity, PeersManager peersManager,
-                           String sessionName, String participantName, LinearLayout views_container, String socketAddress
-                                   /*String token*/) {
+                           String sessionName, String participantName, LinearLayout views_container, String socketAddress,
+                                   String token) {
         this.videoConferenceActivity = videoConferenceActivity;
         this.peersManager = peersManager;
         this.localPeer = peersManager.getLocalPeer();
@@ -74,7 +74,7 @@ public class CustomWebSocket implements WebSocketListener {
         this.socketAddress = socketAddress;
         this.iceCandidatesParams = new ArrayList<>();
         this.participants = new HashMap<>();
-        this.token = "";
+        this.token = token;
     }
 
     public Map<String, RemoteParticipant> getParticipants() {
@@ -101,8 +101,8 @@ public class CustomWebSocket implements WebSocketListener {
 
         pingMessageHandler(websocket);
 
-        String regex = "(room)+";
-        String baseAddress = socketAddress.split(regex)[0];
+        //String regex = "(room)+";
+        //String baseAddress = socketAddress.split(regex)[0];
         Map<String, String> joinRoomParams = new HashMap<>();
         joinRoomParams.put(JSONConstants.METADATA, "{\"clientData\": \"" + participantName + "\"}");
         joinRoomParams.put("recorder", "false");
@@ -411,12 +411,12 @@ public class CustomWebSocket implements WebSocketListener {
 
     @Override
     public void onSendError(WebSocket websocket, WebSocketException cause, WebSocketFrame frame) throws Exception {
-        Log.e(TAG, "Send Error! " + cause);
+        Log.i(TAG, "Send Error! " + cause);
     }
 
     @Override
     public void onUnexpectedError(WebSocket websocket, WebSocketException cause) throws Exception {
-        Log.e(TAG, "Unexpected error! " + cause);
+        Log.i(TAG, "Unexpected error! " + cause);
     }
 
     @Override

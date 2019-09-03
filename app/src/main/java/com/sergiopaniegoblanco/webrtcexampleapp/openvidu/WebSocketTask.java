@@ -11,6 +11,8 @@ import com.sergiopaniegoblanco.webrtcexampleapp.VideoConferenceActivity;
 import com.sergiopaniegoblanco.webrtcexampleapp.managers.PeersManager;
 
 
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.webrtc.AudioTrack;
 import org.webrtc.MediaConstraints;
 import org.webrtc.MediaStream;
@@ -29,11 +31,11 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
-//import okhttp3.MediaType;
+import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
-//import okhttp3.Request;
-//import okhttp3.RequestBody;
-//import okhttp3.Response;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 
 /**
  * Created by sergiopaniegoblanco on 18/02/2018.
@@ -42,8 +44,10 @@ import okhttp3.OkHttpClient;
 public class WebSocketTask extends AsyncTask<VideoConferenceActivity, Void, Void> {
 
     private static final String TAG = "WebSocketTask";
-    //private static final String TOKEN_URL = "https://demos.openvidu.io:4443/api/tokens";
-    //private static final String AUTH_TOKEN = "Basic T1BFTlZJRFVBUFA6TVlfU0VDUkVU";
+    private static final String SESSION_URL = "https://demos.openvidu.io:4443/api/sessions";
+    private static final String TOKEN_URL = "https://demos.openvidu.io:4443/api/tokens";
+    private static final String AUTH_TOKEN = "Basic T1BFTlZJRFVBUFA6TVlfU0VDUkVU"; //MY_SECRET
+
     private VideoConferenceActivity activity;
     private PeerConnection localPeer;
     private String sessionName;
@@ -55,6 +59,7 @@ public class WebSocketTask extends AsyncTask<VideoConferenceActivity, Void, Void
     private PeersManager peersManager;
     private boolean isCancelled = false;
     private OkHttpClient client;
+
     private final TrustManager[] trustManagers = new TrustManager[]{ new X509TrustManager() {
         @Override
         public X509Certificate[] getAcceptedIssuers() {
@@ -83,6 +88,7 @@ public class WebSocketTask extends AsyncTask<VideoConferenceActivity, Void, Void
         this.localAudioTrack = peersManager.getLocalAudioTrack();
         this.localVideoTrack = peersManager.getLocalVideoTrack();
         this.client = new OkHttpClient();
+
     }
 
     public void setCancelled(boolean cancelled) {
@@ -92,48 +98,28 @@ public class WebSocketTask extends AsyncTask<VideoConferenceActivity, Void, Void
     @Override
     protected Void doInBackground(VideoConferenceActivity... parameters) {
         try {
-            /*String json = "{\"session\": \"SessionA\"}";
-            RequestBody body = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), json);
-            Request request = new Request.Builder()
-                    .url(TOKEN_URL)
-                    .header("Authorization", AUTH_TOKEN)
-                    .post(body)
-                    .build();
-            Response response = client.newCall(request).execute();
-            String responseString =  response.body().string();
 
-            Log.d(TAG,"responseString: " + responseString);
-
-            String token = "";
-            try {
-                JSONObject jsonObject = new JSONObject(responseString);
-                token = (String) jsonObject.get("token");
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }*/
             WebSocketFactory factory = new WebSocketFactory();
             SSLContext sslContext = SSLContext.getInstance("TLS");
             sslContext.init(null, trustManagers, new java.security.SecureRandom());
             factory.setSSLContext(sslContext);
             factory.setVerifyHostname(false);
 
-            socketAddress = getSocketAddress();
+            // socketAddress = getSocketAddress();
+            String token = getToken();
             peersManager.setWebSocket(factory.createSocket(socketAddress));
-            peersManager.setWebSocketAdapter(new CustomWebSocket(parameters[0], peersManager, sessionName, participantName, activity.getViewsContainer(), socketAddress /*token*/));
+            peersManager.setWebSocketAdapter(new CustomWebSocket(parameters[0], peersManager, sessionName, participantName, activity.getViewsContainer(), socketAddress, token));
             peersManager.getWebSocket().addListener(peersManager.getWebSocketAdapter());
             if (!isCancelled) {
                 peersManager.getWebSocket().connect();
             }
-        } catch (IOException | KeyManagementException | WebSocketException | NoSuchAlgorithmException | IllegalArgumentException e) {
+        } catch (IOException | KeyManagementException | WebSocketException | NoSuchAlgorithmException e) {
             Log.e("ERROR", e.getMessage());
             Handler mainHandler = new Handler(activity.getMainLooper());
-            Runnable myRunnable = new Runnable() {
-                @Override
-                public void run() {
-                    Toast toast = Toast.makeText(activity,e.getMessage(),Toast.LENGTH_LONG);
-                    toast.show();
-                    activity.leaveSession();
-                }
+            Runnable myRunnable = () -> {
+                Toast toast = Toast.makeText(activity,e.getMessage(),Toast.LENGTH_LONG);
+                toast.show();
+                activity.leaveSession();
             };
             mainHandler.post(myRunnable);
             isCancelled = true;
@@ -141,7 +127,52 @@ public class WebSocketTask extends AsyncTask<VideoConferenceActivity, Void, Void
         return null;
     }
 
-    private String getSocketAddress() {
+    private String getToken() {
+
+        String token = "";
+        try {
+            // Session Request
+            String sessionJson = "{\"customSessionId\": " + sessionName + "}";
+            RequestBody sessionBody = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), sessionJson);
+            Request sessionRequest = new Request.Builder()
+                    .url(SESSION_URL)
+                    .header("Authorization", AUTH_TOKEN).header("Content-Type", "application/json")
+                    .post(sessionBody)
+                    .build();
+            Response sessionResponse = client.newCall(sessionRequest).execute();
+            String responseString = sessionResponse.body().string();
+
+            Log.d(TAG, "responseString: " + responseString);
+
+            //JSONObject jsonObject = new JSONObject(responseString);
+            // Token Request
+            String tokenJson = "{\"session\": " + sessionName + "}";
+            RequestBody tokenBody = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), tokenJson);
+            Request tokenRequest = new Request.Builder()
+                    .url(TOKEN_URL)
+                    .header("Authorization", AUTH_TOKEN).header("Content-Type", "application/json")
+                    .post(tokenBody)
+                    .build();
+            Response tokenResponse = client.newCall(tokenRequest).execute();
+            String tokenResponseString = tokenResponse.body().string();
+
+            Log.d(TAG, "responseString2: " + tokenResponseString);
+            JSONObject tokenJsonObject = new JSONObject(tokenResponseString);
+
+            token = (String) tokenJsonObject.get("token");
+            Log.i("TOKEN", token);
+
+        } catch (IOException | JSONException e) {
+            Log.e("Error", e.getMessage());
+            e.printStackTrace();
+        }
+        finally {
+            return token;
+        }
+
+    }
+
+    /*private String getSocketAddress() {
         String baseAddress = socketAddress;
         String secureWebSocketPrefix = "wss://";
         String insecureWebSocketPrefix = "ws://";
@@ -153,7 +184,7 @@ public class WebSocketTask extends AsyncTask<VideoConferenceActivity, Void, Void
             baseAddress = baseAddress.concat(portSuffix);
         }
         return baseAddress;
-    }
+    }*/
 
     @Override
     protected void onProgressUpdate(Void... progress) {
