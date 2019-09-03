@@ -210,8 +210,9 @@ public class PeersManager {
             @Override
             public void onCreateSuccess(SessionDescription sessionDescription) {
                 super.onCreateSuccess(sessionDescription);
+                Log.i("IceCANDIDATE SUCC", sessionDescription.toString());
                 localPeer.setLocalDescription(new CustomSdpObserver("localSetLocalDesc"), sessionDescription);
-                Map<String, String> localOfferParams =webSocketAdapter.setLocalOfferParams(sessionDescription);
+                Map<String, String> localOfferParams = webSocketAdapter.getLocalOfferParams(sessionDescription);
 
                 if (webSocketAdapter.getId() > 1) {
                     webSocketAdapter.sendJson(webSocket, JSONConstants.PUBLISH_VIDEO_METHOD, localOfferParams);

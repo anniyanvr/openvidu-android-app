@@ -434,7 +434,9 @@ public class CustomWebSocket implements WebSocketListener {
         if (endPointName == null) {
             localPeer.addIceCandidate(iceCandidate);
         } else {
-            participants.get(endPointName).getPeerConnection().addIceCandidate(iceCandidate);
+            if(participants.get(endPointName) != null){
+                participants.get(endPointName).getPeerConnection().addIceCandidate(iceCandidate);
+            }
         }
     }
 
@@ -501,7 +503,7 @@ public class CustomWebSocket implements WebSocketListener {
         return iceCandidateParams;
     }
 
-    public Map<String, String> setLocalOfferParams(SessionDescription sessionDescription) {
+    public Map<String, String> getLocalOfferParams(SessionDescription sessionDescription) {
         Map<String, String> localOfferParams = new HashMap<>();
         localOfferParams.put("audioActive", "true");
         localOfferParams.put("videoActive", "true");
