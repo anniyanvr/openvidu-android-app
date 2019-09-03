@@ -1,5 +1,6 @@
 package com.sergiopaniegoblanco.webrtcexampleapp.managers;
 
+import android.os.Build;
 import android.util.Log;
 import android.widget.LinearLayout;
 
@@ -14,6 +15,10 @@ import com.sergiopaniegoblanco.webrtcexampleapp.openvidu.CustomWebSocket;
 import org.webrtc.AudioSource;
 import org.webrtc.AudioTrack;
 import org.webrtc.Camera1Enumerator;
+import org.webrtc.Camera2Enumerator;
+import org.webrtc.CameraEnumerator;
+import org.webrtc.DefaultVideoDecoderFactory;
+import org.webrtc.DefaultVideoEncoderFactory;
 import org.webrtc.EglBase;
 import org.webrtc.IceCandidate;
 import org.webrtc.MediaConstraints;
@@ -136,7 +141,11 @@ public class PeersManager {
     }
 
     private void createVideoCapturer() {
-        videoCapturerAndroid = createCameraCapturer(new Camera1Enumerator(false));
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP && Camera2Enumerator.isSupported(activity.getApplicationContext())) {
+             videoCapturerAndroid = createCameraCapturer(new Camera2Enumerator(activity.getApplicationContext()));
+        } else {
+             videoCapturerAndroid = createCameraCapturer(new Camera1Enumerator(false));
+        }
         surfaceTextureHelper =
                 SurfaceTextureHelper.create("CaptureThread", rootEglBase.getEglBaseContext());
         VideoSource videoSource = peerConnectionFactory.createVideoSource(videoCapturerAndroid.isScreencast());
@@ -146,7 +155,7 @@ public class PeersManager {
         localVideoTrack.setEnabled(true);
     }
 
-    private VideoCapturer createCameraCapturer(Camera1Enumerator enumerator) {
+    private VideoCapturer createCameraCapturer(CameraEnumerator enumerator) {
         final String[] deviceNames = enumerator.getDeviceNames();
 
         // Trying to find front facing camera
