@@ -105,22 +105,17 @@ public class PeersManager {
         final VideoEncoderFactory encoderFactory;
         final VideoDecoderFactory decoderFactory;
 
-        PeerConnectionFactory.InitializationOptions.Builder optionsBuilder = PeerConnectionFactory.InitializationOptions.builder(activity);
+        PeerConnectionFactory.InitializationOptions.Builder optionsBuilder = PeerConnectionFactory.InitializationOptions.builder(activity.getApplicationContext());
         optionsBuilder.setEnableInternalTracer(true);
         PeerConnectionFactory.InitializationOptions opt = optionsBuilder.createInitializationOptions();
 
         PeerConnectionFactory.initialize(opt);
 
         PeerConnectionFactory.Options options = new PeerConnectionFactory.Options();
-
-
-        /*encoderFactory = new DefaultVideoEncoderFactory(
-                rootEglBase.getEglBaseContext(), true ,true);
-        decoderFactory = new DefaultVideoDecoderFactory(rootEglBase.getEglBaseContext());*/
-
-
+        
         encoderFactory = new SoftwareVideoEncoderFactory();
         decoderFactory = new SoftwareVideoDecoderFactory();
+
 
         peerConnectionFactory = PeerConnectionFactory.builder()
                 .setVideoEncoderFactory(encoderFactory)
