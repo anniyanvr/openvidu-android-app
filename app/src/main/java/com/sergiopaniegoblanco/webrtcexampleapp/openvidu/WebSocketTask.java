@@ -44,9 +44,7 @@ import okhttp3.Response;
 public class WebSocketTask extends AsyncTask<VideoConferenceActivity, Void, Void> {
 
     private static final String TAG = "WebSocketTask";
-    private static final String SESSION_URL = "https://demos.openvidu.io:4443/api/sessions";
-    private static final String TOKEN_URL = "https://demos.openvidu.io:4443/api/tokens";
-    private static final String AUTH_TOKEN = "Basic T1BFTlZJRFVBUFA6TVlfU0VDUkVU"; //MY_SECRET
+
 
     private VideoConferenceActivity activity;
     private PeerConnection localPeer;
@@ -83,7 +81,7 @@ public class WebSocketTask extends AsyncTask<VideoConferenceActivity, Void, Void
         this.localPeer = peersManager.getLocalPeer();
         this.sessionName = sessionName;
         this.participantName = participantName;
-        this.socketAddress = socketAddress;
+        this.socketAddress = getSocketAddress(socketAddress);
         this.peerConnectionFactory = peersManager.getPeerConnectionFactory();
         this.localAudioTrack = peersManager.getLocalAudioTrack();
         this.localVideoTrack = peersManager.getLocalVideoTrack();
@@ -105,7 +103,6 @@ public class WebSocketTask extends AsyncTask<VideoConferenceActivity, Void, Void
             factory.setSSLContext(sslContext);
             factory.setVerifyHostname(false);
 
-            // socketAddress = getSocketAddress();
             String token = getToken();
             peersManager.setWebSocket(factory.createSocket(socketAddress));
             peersManager.setWebSocketAdapter(new CustomWebSocket(parameters[0], peersManager, sessionName, participantName, activity.getViewsContainer(), socketAddress, token));
@@ -129,7 +126,11 @@ public class WebSocketTask extends AsyncTask<VideoConferenceActivity, Void, Void
 
     private String getToken() {
 
+        String SESSION_URL = "https://" + getbaseAddress() + "/api/sessions";
+        String TOKEN_URL = "https://" + getbaseAddress() + "/api/tokens";
+        String AUTH_TOKEN = "Basic T1BFTlZJRFVBUFA6TVlfU0VDUkVU"; //MY_SECRET base-64 encoded.
         String token = "";
+
         try {
             // Session Request
             String sessionJson = "{\"customSessionId\": " + sessionName + "}";
@@ -172,7 +173,7 @@ public class WebSocketTask extends AsyncTask<VideoConferenceActivity, Void, Void
 
     }
 
-    /*private String getSocketAddress() {
+    private String getSocketAddress(String socketAddress) {
         String baseAddress = socketAddress;
         String secureWebSocketPrefix = "wss://";
         String insecureWebSocketPrefix = "ws://";
@@ -184,7 +185,16 @@ public class WebSocketTask extends AsyncTask<VideoConferenceActivity, Void, Void
             baseAddress = baseAddress.concat(portSuffix);
         }
         return baseAddress;
-    }*/
+    }
+
+    private String getbaseAddress() {
+        String secureWebSocketPrefix = "wss://";
+        String[] baseAddress = socketAddress.split(secureWebSocketPrefix);
+        if (baseAddress.length == 2) {
+            return baseAddress[1].split("/")[0];
+        }
+        return "";
+    }
 
     @Override
     protected void onProgressUpdate(Void... progress) {
