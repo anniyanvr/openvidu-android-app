@@ -1,3 +1,7 @@
+> **WARNING**:  this repository is not fully functional and is unmaintained. Visit **[openvidu-android tutorial](https://github.com/OpenVidu/openvidu-tutorials/tree/master/openvidu-android)** instead
+
+---
+
 # openvidu-android-app
 
 ![Technologies](GitHubImages/technologies.png)
